@@ -1,0 +1,63 @@
+# Office / document binaries (do not push to GitHub)
+*.docx
+*.doc
+*.pdf
+*.pptx
+*.ppt
+
+# Optional: keep template/docs structure but ignore generated/binary docs
+# Uncomment if you want to allow .md but ignore only specific paths:
+# docs/**/*.pdf
+# docs/**/*.docx
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDE / editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Local config / secrets
+.env
+.env.local
+*.local
+config.local.*
+
+# Data (optional: uncomment if raw/processed data should not be in repo)
+# data/raw/
+# data/processed/
