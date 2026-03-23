@@ -11,7 +11,9 @@ from typing import Callable
 
 from ..core.config import AppConfig
 from ..core.context import set_exchange
+from ..core.timeframes import bar_open_timestamp_ms, timeframe_to_milliseconds
 from ..data.storage import append_rows_csv, ensure_dir, last_numeric_value
+from ..data.trade_bars import TradeOhlcvAccumulator, trade_ohlcv_csv_fieldnames
 from ..services.exchange import create_exchange
 from ..services.market import fetch_ohlcv, fetch_order_book, fetch_tickers, fetch_trades
 from ..services.orders import fetch_open_orders
@@ -42,6 +44,8 @@ class LiveDataCollector:
 
         self._last_trade_ts: dict[str, int] = {}
         self._last_ohlcv_ts: dict[tuple[str, str], int] = {}
+        # (symbol, timeframe) -> accumulator for OHLCV built from ticks (same TF as exchange config)
+        self._trade_ohlcv_accum: dict[tuple[str, str], TradeOhlcvAccumulator] = {}
 
         self.account_name = ""
         self.exchange_name = ""
@@ -163,6 +167,9 @@ class LiveDataCollector:
                 if now - self._last_polled["ohlcv"] >= self.config.interval_ohlcv_s:
                     self._collect_ohlcv()
                     self._last_polled["ohlcv"] = now
+
+                # Close trade-aggregated bars when wall clock passes bar end (even if no new ticks this tick)
+                self._flush_closed_trade_ohlcv()
 
                 time.sleep(0.2)
         except Exception as e:
@@ -304,6 +311,76 @@ class LiveDataCollector:
             if n:
                 self._last_trade_ts[sym] = max_ts
                 self._log(f"Collected trades {sym} (+{n})")
+                self._ingest_trades_for_ohlcv(sym, rows)
+
+    def _ingest_trades_for_ohlcv(self, sym: str, trade_rows: list[dict]) -> None:
+        """Roll ticks into per-timeframe accumulators (see ``trade_aggregate_timeframes`` in config)."""
+        if not trade_rows:
+            return
+        sorted_rows = sorted(
+            trade_rows,
+            key=lambda r: int(float(r.get("timestamp_ms", 0) or 0)),
+        )
+        out_dir = Path(self.config.output_dir)
+        for tf in self.config.trade_aggregate_timeframes:
+            try:
+                period_ms = timeframe_to_milliseconds(tf)
+            except ValueError:
+                self._log(f"Trade OHLCV skipped: unsupported timeframe {tf!r}")
+                continue
+            path = out_dir / "ohlcv" / f"ohlcv_trades_{_safe_symbol(sym)}_{tf}.csv"
+            last_done_raw = last_numeric_value(path, "timestamp_ms")
+            last_done = last_done_raw if last_done_raw is not None else -1
+            filtered: list[dict] = []
+            for r in sorted_rows:
+                try:
+                    ts_ms = int(float(r.get("timestamp_ms", 0) or 0))
+                except (TypeError, ValueError):
+                    continue
+                if ts_ms <= 0:
+                    continue
+                b0 = bar_open_timestamp_ms(ts_ms, period_ms)
+                if last_done >= 0 and b0 <= last_done:
+                    continue
+                filtered.append(r)
+            if not filtered:
+                continue
+            key = (sym, tf)
+            if key not in self._trade_ohlcv_accum:
+                self._trade_ohlcv_accum[key] = TradeOhlcvAccumulator(period_ms=period_ms)
+            self._trade_ohlcv_accum[key].ingest_sorted_trades(filtered)
+
+    def _flush_closed_trade_ohlcv(self) -> None:
+        """Append completed trade-aggregated bars to ``ohlcv/ohlcv_trades_*``."""
+        wall_ms = int(time.time() * 1000)
+        out_dir = Path(self.config.output_dir)
+        fields = trade_ohlcv_csv_fieldnames()
+        for key, acc in list(self._trade_ohlcv_accum.items()):
+            sym, tf = key
+            path = out_dir / "ohlcv" / f"ohlcv_trades_{_safe_symbol(sym)}_{tf}.csv"
+            last_raw = last_numeric_value(path, "timestamp_ms")
+            last_flushed = last_raw if last_raw is not None else -1
+            closed = acc.pop_closed_bars(wall_ms, last_flushed)
+            if not closed:
+                continue
+            rows_out = [
+                {
+                    "timestamp_ms": r["timestamp_ms"],
+                    "symbol": sym,
+                    "timeframe": tf,
+                    "open": r["open"],
+                    "high": r["high"],
+                    "low": r["low"],
+                    "close": r["close"],
+                    "volume": r["volume"],
+                    "trade_count": r["trade_count"],
+                    "source": "trades",
+                }
+                for r in closed
+            ]
+            n = append_rows_csv(path, fields, rows_out)
+            if n:
+                self._log(f"Trade-aggregated OHLCV {sym} {tf} (+{n} bars)")
 
     def _collect_ohlcv(self) -> None:
         for sym in self.config.symbols:

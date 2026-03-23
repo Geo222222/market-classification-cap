@@ -10,6 +10,9 @@ import yaml
 
 from .paths import resolve_config_path, resolve_under_package
 
+# Default tick-aggregation bar sizes (exchange OHLCV uses ``timeframes`` separately).
+DEFAULT_TRADE_AGGREGATE_TIMEFRAMES = ["5s", "10s", "15s", "30s", "45s"]
+
 
 @dataclass
 class AppConfig:
@@ -17,6 +20,11 @@ class AppConfig:
     account_name: str = ""
     symbols: list[str] = field(default_factory=lambda: ["ETH/USDT:USDT", "BTC/USDT:USDT"])
     timeframes: list[str] = field(default_factory=lambda: ["1m", "5m"])
+    # Bar lengths for aggregating tick trades into ohlcv_trades_* (e.g. 5s, 10s, 1m, 5m).
+    # If omitted or empty in YAML, defaults to DEFAULT_TRADE_AGGREGATE_TIMEFRAMES (second bars).
+    trade_aggregate_timeframes: list[str] = field(
+        default_factory=lambda: list(DEFAULT_TRADE_AGGREGATE_TIMEFRAMES)
+    )
     # Relative paths are resolved against the data_pipeline package root (see load_config).
     output_dir: str = "data"
 
@@ -43,6 +51,7 @@ def default_config_dict() -> dict[str, Any]:
             "account_name": _DEFAULT.account_name,
             "symbols": _DEFAULT.symbols,
             "timeframes": _DEFAULT.timeframes,
+            "trade_aggregate_timeframes": list(DEFAULT_TRADE_AGGREGATE_TIMEFRAMES),
             "output_dir": _DEFAULT.output_dir,
             "interval_orders_s": _DEFAULT.interval_orders_s,
             "interval_orderbook_s": _DEFAULT.interval_orderbook_s,
@@ -88,14 +97,28 @@ def load_config(path: str | Path | None = None) -> AppConfig:
 
     symbols = app.get("symbols", _DEFAULT.symbols)
     timeframes = app.get("timeframes", _DEFAULT.timeframes)
+    trade_agg_raw = app.get("trade_aggregate_timeframes")
 
     raw_output = str(app.get("output_dir", _DEFAULT.output_dir) or _DEFAULT.output_dir)
+
+    tf_list = (
+        [str(tf).strip() for tf in timeframes if str(tf).strip()]
+        if isinstance(timeframes, list)
+        else list(_DEFAULT.timeframes)
+    )
+    if isinstance(trade_agg_raw, list):
+        trade_agg_list = [str(tf).strip() for tf in trade_agg_raw if str(tf).strip()]
+    else:
+        trade_agg_list = []
+    if not trade_agg_list:
+        trade_agg_list = list(DEFAULT_TRADE_AGGREGATE_TIMEFRAMES)
 
     cfg = AppConfig(
         exchange_name=str(app.get("exchange_name", _DEFAULT.exchange_name) or _DEFAULT.exchange_name),
         account_name=str(app.get("account_name", _DEFAULT.account_name) or ""),
         symbols=[str(s).strip() for s in symbols if str(s).strip()] if isinstance(symbols, list) else list(_DEFAULT.symbols),
-        timeframes=[str(tf).strip() for tf in timeframes if str(tf).strip()] if isinstance(timeframes, list) else list(_DEFAULT.timeframes),
+        timeframes=tf_list,
+        trade_aggregate_timeframes=trade_agg_list,
         output_dir=raw_output,
         interval_orders_s=max(1.0, _flt("interval_orders_s", _DEFAULT.interval_orders_s)),
         interval_orderbook_s=max(1.0, _flt("interval_orderbook_s", _DEFAULT.interval_orderbook_s)),
@@ -110,6 +133,8 @@ def load_config(path: str | Path | None = None) -> AppConfig:
         cfg.symbols = list(_DEFAULT.symbols)
     if not cfg.timeframes:
         cfg.timeframes = list(_DEFAULT.timeframes)
+    if not cfg.trade_aggregate_timeframes:
+        cfg.trade_aggregate_timeframes = list(DEFAULT_TRADE_AGGREGATE_TIMEFRAMES)
 
     cfg.output_dir = str(resolve_under_package(cfg.output_dir))
     return cfg

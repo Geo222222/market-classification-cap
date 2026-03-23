@@ -9,6 +9,14 @@ app:
   timeframes:
     - 1m
     - 5m
+  # Tick -> OHLCV bars only (seconds here); files: data/ohlcv/ohlcv_trades_{SYMBOL}_{tf}.csv
+  # Exchange candles still use ``timeframes`` (1m, 5m, ...). Omit = default second bars below.
+  trade_aggregate_timeframes:
+    - 5s
+    - 10s
+    - 15s
+    - 30s
+    - 45s
   # Relative to the data_pipeline package directory (src/data_pipeline/), unless absolute
   output_dir: data
 

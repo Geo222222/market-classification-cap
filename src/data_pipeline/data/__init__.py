@@ -1,1 +1,1 @@
-"""CSV storage and collector output layout."""
+"""CSV storage and trade-bar helpers."""

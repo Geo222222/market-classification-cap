@@ -54,8 +54,9 @@ class CollectorApp(tk.Tk):
             self,
             text=(
                 f"Symbols: {', '.join(self.config_obj.symbols)} | "
-                f"Timeframes: {', '.join(self.config_obj.timeframes)} | "
-                f"CSV Output: {Path(self.config_obj.output_dir).resolve()}"
+                f"OHLCV TFs: {', '.join(self.config_obj.timeframes)} | "
+                f"Trade agg TFs: {', '.join(self.config_obj.trade_aggregate_timeframes)} | "
+                f"CSV: {Path(self.config_obj.output_dir).resolve()}"
             ),
         )
         info.pack(fill=tk.X, padx=10)

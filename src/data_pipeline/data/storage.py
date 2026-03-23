@@ -28,7 +28,6 @@ def append_rows_csv(path: str | Path, fieldnames: list[str], rows: Iterable[dict
         writer.writerows(rows_list)
     return len(rows_list)
 
-
 def last_numeric_value(path: str | Path, column: str) -> int | None:
     """Return last numeric value in a CSV column without loading full file into memory."""
     p = Path(path)
