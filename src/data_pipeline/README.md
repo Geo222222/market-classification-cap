@@ -1,9 +1,10 @@
 # `data_pipeline` (in-repo, incremental)
 
-## In this commit: `core` + `data.storage`
+## Package layout
 
 - **`core/`** — `paths`, `config` (`AppConfig`, `load_config`), `context`, `errors`, `utils`, `cleaning`
 - **`data/storage.py`** — CSV append / last-column helpers
+- **`services/`** — `exchange` (`create_exchange`), `market` (OHLCV, trades, tickers, order book), `orders` (open orders)
 - **`app_config.yaml`** — default app settings (tracked)
 
 Collector CSV files under `data/**` are **gitignored**; only `data/.gitkeep` is tracked.
@@ -20,4 +21,6 @@ python -m data_pipeline
 # or: python run_collector.py
 ```
 
-This loads config and prints a summary. The Tk UI returns when `services/`, `app/`, and `ui/` are added back.
+This loads config and prints a summary. The Tk UI returns when `app/` and `ui/` are wired back in.
+
+Requires **`credentials.yaml`** at the repo root (gitignored) for live API calls via `services.exchange.create_exchange`.
