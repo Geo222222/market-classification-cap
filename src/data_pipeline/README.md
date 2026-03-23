@@ -1,7 +1,5 @@
 # `data_pipeline` (in-repo, incremental)
 
-This package is under active development. Add modules here and commit in small steps so GitHub shows your progress.
-
 ## In this commit: `core` + `data.storage`
 
 - **`core/`** — `paths`, `config` (`AppConfig`, `load_config`), `context`, `errors`, `utils`, `cleaning`

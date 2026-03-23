@@ -2,8 +2,8 @@ app:
   exchange_name: htx
   account_name: EPX
   symbols:
-    - ETH/USDT:USDT
     - BTC/USDT:USDT
+    - ETH/USDT:USDT
     - DOGE/USDT:USDT
     - XRP/USDT:USDT
   timeframes:
