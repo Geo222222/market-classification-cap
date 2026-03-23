@@ -48,7 +48,7 @@ cd src
 python -m data_pipeline
 ```
 
-See `src/data_pipeline/README.md` for config, credentials, and CSV output paths.
+See `src/data_pipeline/README.md` for config, credentials, CSV output paths, and the Tk collector UI.
 
 ---
 
