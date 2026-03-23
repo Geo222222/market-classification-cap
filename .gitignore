@@ -63,7 +63,7 @@ credentials.yaml
 
 # Local work-in-progress / reference copy (not pushed — rebuild `src/data_pipeline` in tracked commits)
 progress/
-
+practice/
 # Collector CSV output under the package (local only)
 src/data_pipeline/data/**/*.csv
 
