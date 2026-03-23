@@ -1,0 +1,23 @@
+app:
+  exchange_name: htx
+  account_name: EPX
+  symbols:
+    - ETH/USDT:USDT
+    - BTC/USDT:USDT
+    - DOGE/USDT:USDT
+    - XRP/USDT:USDT
+  timeframes:
+    - 1m
+    - 5m
+  # Relative to the data_pipeline package directory (src/data_pipeline/), unless absolute
+  output_dir: data
+
+  interval_orders_s: 8
+  interval_orderbook_s: 3
+  interval_tickers_s: 10
+  interval_trades_s: 5
+  interval_ohlcv_s: 20
+
+  trades_limit: 200
+  ohlcv_limit: 300
+  reconcile_chunk_limit: 1000

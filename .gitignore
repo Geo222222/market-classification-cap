@@ -4,6 +4,7 @@
 *.pdf
 *.pptx
 *.ppt
+*.tex
 
 # Optional: keep template/docs structure but ignore generated/binary docs
 # Uncomment if you want to allow .md but ignore only specific paths:
@@ -57,6 +58,14 @@ Thumbs.db
 .env.local
 *.local
 config.local.*
+credentials.yaml
+**/credentials.yaml
+
+# Local work-in-progress / reference copy (not pushed — rebuild `src/data_pipeline` in tracked commits)
+progress/
+
+# Collector CSV output under the package (local only)
+src/data_pipeline/data/**/*.csv
 
 # Data (optional: uncomment if raw/processed data should not be in repo)
 # data/raw/
