@@ -1,4 +1,4 @@
-# Helps GitHub/Cursor use UTF-8 for Markdown (UTF-16 READMEs break rendering)
+# Prefer UTF-8 so Markdown renders on GitHub (UTF-16 READMEs break rendering)
 root = true
 
 [*]
